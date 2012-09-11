@@ -41,8 +41,7 @@ class ScalaPresentationCompiler(project: ScalaProject, settings: Settings)
   with JavaSig
   with JVMUtils
   with LocateSymbol
-  with HasLogger
-  with SymbolsCompatibility { self =>
+  with HasLogger { self =>
 
   def presentationReporter = reporter.asInstanceOf[ScalaPresentationCompiler.PresentationReporter]
   presentationReporter.compiler = this
