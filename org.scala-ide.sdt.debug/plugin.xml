@@ -80,4 +80,10 @@
             id="org.scala-ide.sdt.debug.socketListenConnector">
       </vmConnector>
    </extension>
+      
+   <extension point = "org.eclipse.debug.core.watchExpressionDelegates">
+   	 <watchExpressionDelegate
+		debugModel="org.scala-ide.sdt.debug"
+     	delegateClass="scala.tools.eclipse.debug.model.ScalaWatchExpressionDelegate"/>
+   </extension>
 </plugin>

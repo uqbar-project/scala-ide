@@ -5,7 +5,6 @@ import scala.tools.eclipse.debug.PoisonPill
 import scala.tools.eclipse.debug.ScalaSourceLookupParticipant
 import scala.tools.eclipse.debug.breakpoints.ScalaDebugBreakpointManager
 import scala.tools.eclipse.logging.HasLogger
-
 import org.eclipse.core.resources.IMarkerDelta
 import org.eclipse.debug.core.DebugEvent
 import org.eclipse.debug.core.DebugPlugin
@@ -15,7 +14,6 @@ import org.eclipse.debug.core.model.IDebugTarget
 import org.eclipse.debug.core.model.IProcess
 import org.eclipse.debug.core.sourcelookup.ISourceLookupDirector
 import org.osgi.framework.Version
-
 import com.sun.jdi.ClassNotLoadedException
 import com.sun.jdi.ThreadReference
 import com.sun.jdi.VirtualMachine
@@ -26,6 +24,11 @@ import com.sun.jdi.event.VMDisconnectEvent
 import com.sun.jdi.event.VMStartEvent
 import com.sun.jdi.request.ThreadDeathRequest
 import com.sun.jdi.request.ThreadStartRequest
+import com.sun.tools.jdi.ClassObjectReferenceImpl
+import java.io.FileOutputStream
+import java.io.DataOutputStream
+import java.io.FileWriter
+import java.io.BufferedWriter
 
 object ScalaDebugTarget extends HasLogger {
 
@@ -251,9 +254,14 @@ abstract class ScalaDebugTarget private (val virtualMachine: VirtualMachine, lau
    *
    * @throws ClassNotLoadedException if the class was not loaded yet.
    */
-  private def classByName(typeName: String, tryForceLoad: Boolean, thread: ScalaThread): ScalaReferenceType = {
+  def classByName(typeName: String, tryForceLoad: Boolean, thread: ScalaThread): ScalaReferenceType = {
     import scala.collection.JavaConverters._
     // TODO: need toList?
+
+    import scala.collection.JavaConversions._
+    var claseDeA = virtualMachine.classesByName("A")
+    var claseDeWatch = virtualMachine.classesByName("scala.tools.eclipse.debug.model.ScalaWatchExpressionDelegate")
+
     virtualMachine.classesByName(typeName).asScala.toList match {
       case t :: _ =>
         ScalaType(t, this)
@@ -269,9 +277,9 @@ abstract class ScalaDebugTarget private (val virtualMachine: VirtualMachine, lau
   /** Attempt to force load a type, by finding the classloader of `scala.Predef` and calling `loadClass` on it.
    */
   private def forceLoad(typeName: String, thread: ScalaThread): ScalaReferenceType = {
-    val predef = objectByName("scala.Predef", false, null)
-    val classLoader = getClassLoader(predef, thread)
-    classLoader.invokeMethod("loadClass", thread, ScalaValue(typeName, this))
+    val classClass = classByName("java.lang.Class", false, null).asInstanceOf[ScalaClassType]
+    classClass.invokeMethod("forName", "(Ljava/lang/String;)Ljava/lang/Class;", thread, ScalaValue(typeName, this))
+
     val entities = virtualMachine.classesByName(typeName)
       if (entities.isEmpty()) {
         throw new ClassNotLoadedException(typeName, "Unable to force load")

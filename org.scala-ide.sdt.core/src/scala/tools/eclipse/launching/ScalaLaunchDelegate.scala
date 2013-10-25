@@ -35,8 +35,13 @@ import org.eclipse.core.runtime.Status
 import org.eclipse.debug.internal.core.IInternalDebugCoreConstants
 import org.eclipse.jface.dialogs.MessageDialogWithToggle
 import org.eclipse.jface.dialogs.IDialogConstants
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
+import scala.tools.eclipse.ScalaProject
 
 class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
+
+  var scalaProject: ScalaProject = _
+
   /** This code is very heavily inspired from `JavaLaunchDelegate`. */
   def launch(configuration: ILaunchConfiguration, mode: String, launch: ILaunch, monitor0: IProgressMonitor) {
 
@@ -64,9 +69,11 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       val vmArgs = getVMArguments(configuration)
       val execArgs = new ExecutionArguments(vmArgs, pgmArgs)
 
+      val scalaCompilerLibrary = ScalaPlugin.plugin.compilerClasses.map(p => List(p.toPortableString()))
+
       // VM-specific attributes
       val vmAttributesMap = getVMSpecificAttributesMap(configuration)
-
+      vmAttributesMap.put(IJavaLaunchConfigurationConstants.ATTR_BOOTPATH_PREPEND, vmAttributesMap.get(IJavaLaunchConfigurationConstants.ATTR_BOOTPATH_PREPEND).asInstanceOf[Array[String]] ++ scalaCompilerLibrary.getOrElse(List()))
       import JavaConverters._
 
       // adding Scala libraries is the only difference compared to the Java Launcher
@@ -75,11 +82,12 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
         if (vmAttributesMap == null) mutable.Map()
         else vmAttributesMap.asInstanceOf[java.util.Map[String,Array[String]]].asScala
       val classpath0 = getClasspath(configuration)
-      val missingScalaLibraries = toInclude(modifiedAttrMap,
-          classpath0.toList, configuration)
+      val missingScalaLibraries = toInclude(modifiedAttrMap, classpath0.toList, configuration)
       // Classpath
       // Add scala libraries that were missed in VM attributes
-      val classpath = (classpath0.toList):::missingScalaLibraries
+      val classpath = (classpath0.toList):::missingScalaLibraries ::: (scalaCompilerLibrary getOrElse List()) :::List("/home/nicolas/Desarrollo/Programas/Scala/scala-ide/org.scala-ide.sdt.debug/target/org.scala-ide.sdt.debug-4.0.0-SNAPSHOT.jar")
+
+
 
       // Create VM config
       val runConfig = new VMRunnerConfiguration(mainTypeName, classpath.toArray)
@@ -135,6 +143,7 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
     val project = getJavaProject(configuration)
     val mainTypeName = getMainTypeName(configuration)
     ScalaPlugin.plugin.asScalaProject(project.getProject) map { scalaProject =>
+      this.scalaProject = scalaProject
       val mainClassVerifier = new MainClassVerifier
       val status = mainClassVerifier.execute(scalaProject, mainTypeName, existsProblems(project.getProject))
       if(!status.isOK) {
