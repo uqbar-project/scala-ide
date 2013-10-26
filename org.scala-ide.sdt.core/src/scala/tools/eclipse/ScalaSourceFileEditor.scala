@@ -89,15 +89,6 @@ class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationU
 
   setPartName("Scala Editor")
 
-  //  override def getAdapter(adapter: java.lang.Class[_]): java.lang.Object = {
-  //    if (adapter.equals(classOf[IContentOutlinePage])) {
-  //      val outlinePage = new JavaOutlinePage("#CompilationUnitOutlinerContext", this)
-  //      
-  //      return outlinePage
-  //    }
-  //    super.getAdapter(adapter);
-  //  }
-
   override protected def createOutlinePage() = {
     val page = new ScalaContentOutlinePage("#CompilationUnitOutlinerContext", this)
     setOutlinePageInput(page, getEditorInput())
