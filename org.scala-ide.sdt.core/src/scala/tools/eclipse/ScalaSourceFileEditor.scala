@@ -7,7 +7,6 @@
 package scala.tools.eclipse
 
 import java.util.ResourceBundle
-
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.SynchronizedBuffer
 import scala.tools.eclipse.javaelements.ScalaCompilationUnit
@@ -24,12 +23,13 @@ import scala.tools.eclipse.util.EclipseUtils
 import scala.tools.eclipse.util.EditorUtils
 import scala.tools.eclipse.util.RichAnnotationModel.RichModel
 import scala.tools.eclipse.util.Utils
-
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.Status
 import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.jdt.core.dom.CompilationUnit
 import org.eclipse.jdt.internal.ui.javaeditor.CompilationUnitEditor
+import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor
+import org.eclipse.jdt.internal.ui.javaeditor.JavaOutlinePage
 import org.eclipse.jdt.internal.ui.javaeditor.selectionactions.SelectionHistory
 import org.eclipse.jdt.internal.ui.javaeditor.selectionactions.StructureSelectHistoryAction
 import org.eclipse.jdt.internal.ui.javaeditor.selectionactions.StructureSelectionAction
@@ -51,7 +51,6 @@ import org.eclipse.jface.text.Position
 import org.eclipse.jface.text.information.InformationPresenter
 import org.eclipse.jface.text.source.Annotation
 import org.eclipse.jface.text.source.IAnnotationModel
-import org.eclipse.jface.text.source.SourceViewerConfiguration
 import org.eclipse.jface.util.PropertyChangeEvent
 import org.eclipse.jface.viewers.ISelection
 import org.eclipse.swt.widgets.Shell
@@ -62,7 +61,7 @@ import org.eclipse.ui.texteditor.IAbstractTextEditorHelpContextIds
 import org.eclipse.ui.texteditor.ITextEditorActionConstants
 import org.eclipse.ui.texteditor.IUpdate
 import org.eclipse.ui.texteditor.TextOperationAction
-
+import org.eclipse.swt.widgets.Composite
 
 class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationUnitEditor { self =>
   import ScalaSourceFileEditor._
@@ -89,6 +88,21 @@ class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationU
   }
 
   setPartName("Scala Editor")
+
+  //  override def getAdapter(adapter: java.lang.Class[_]): java.lang.Object = {
+  //    if (adapter.equals(classOf[IContentOutlinePage])) {
+  //      val outlinePage = new JavaOutlinePage("#CompilationUnitOutlinerContext", this)
+  //      
+  //      return outlinePage
+  //    }
+  //    super.getAdapter(adapter);
+  //  }
+
+  override protected def createOutlinePage() = {
+    val page = new ScalaContentOutlinePage("#CompilationUnitOutlinerContext", this)
+    setOutlinePageInput(page, getEditorInput())
+    page
+  }
 
   override protected def createActions() {
     super.createActions()
@@ -145,7 +159,8 @@ class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationU
     askForOccurrencesUpdate(selection)
   }
 
-  /** Returns the annotation model of the current document provider.
+  /**
+   * Returns the annotation model of the current document provider.
    */
   private def getAnnotationModelOpt: Option[IAnnotationModel] = {
     for {
@@ -156,7 +171,7 @@ class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationU
 
   private def performOccurrencesUpdate(selection: ITextSelection, documentLastModified: Long) {
     val annotations = getAnnotations(selection, documentLastModified)
-    for(annotationModel <- getAnnotationModelOpt) annotationModel.withLock {
+    for (annotationModel <- getAnnotationModelOpt) annotationModel.withLock {
       annotationModel.replaceAnnotations(occurrenceAnnotations, annotations)
       occurrenceAnnotations = annotations.keySet
     }
@@ -221,7 +236,8 @@ class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationU
     removeScalaOccurrenceAnnotations()
   }
 
-  /** Clear the existing Mark Occurrences annotations.
+  /**
+   * Clear the existing Mark Occurrences annotations.
    */
   def removeScalaOccurrenceAnnotations() {
     for (annotationModel <- getAnnotationModelOpt) annotationModel.withLock {
@@ -375,5 +391,20 @@ object ScalaSourceFileEditor {
     def addReconcileListener(listener: IJavaReconcilingListener): Unit = reconcilingListeners += listener
 
     def removeReconcileListener(listener: IJavaReconcilingListener): Unit = reconcilingListeners -= listener
+  }
+}
+
+class ScalaContentOutlinePage(s: String, j: JavaEditor) extends JavaOutlinePage(s, j) {
+
+  override def createControl(parent: Composite) = {
+    super.createControl(parent)
+    val toolbarManager = this
+      .getSite()
+      .getActionBars()
+      .getToolBarManager();
+    toolbarManager.add(new Action() {
+      setText("XAI")
+    })
+
   }
 }
