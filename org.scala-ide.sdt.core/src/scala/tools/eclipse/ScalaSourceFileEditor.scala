@@ -62,6 +62,9 @@ import org.eclipse.ui.texteditor.ITextEditorActionConstants
 import org.eclipse.ui.texteditor.IUpdate
 import org.eclipse.ui.texteditor.TextOperationAction
 import org.eclipse.swt.widgets.Composite
+import org.eclipse.jdt.internal.ui.viewsupport.AppearanceAwareLabelProvider
+import org.eclipse.jdt.ui.JavaElementLabels
+import org.eclipse.jdt.internal.ui.viewsupport.DecoratingJavaLabelProvider
 
 class ScalaSourceFileEditor extends CompilationUnitEditor with ScalaCompilationUnitEditor { self =>
   import ScalaSourceFileEditor._
@@ -389,6 +392,12 @@ class ScalaContentOutlinePage(s: String, j: JavaEditor) extends JavaOutlinePage(
 
   override def createControl(parent: Composite) = {
     super.createControl(parent)
+    val lprovider = new ScalaElementsLabelProvider(
+      JavaElementLabels.M_PRE_RETURNTYPE | JavaElementLabels.F_PRE_TYPE_SIGNATURE| JavaElementLabels.ALL_CATEGORY | JavaElementLabels.M_FULLY_QUALIFIED,
+      AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS) ;
+
+    getOutlineViewer().setLabelProvider(new DecoratingJavaLabelProvider(lprovider));
+
     val toolbarManager = this
       .getSite()
       .getActionBars()
