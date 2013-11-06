@@ -18,7 +18,10 @@ class ScalaElementsFormatter {
     element match {
       case e: ScalaDefElement =>
         val display = new StyledString(e.getElementName)
-        if (!e.getParameterTypes().isEmpty) {
+//        val ps = e.getParameters
+//        val pt = e.getParameterTypes
+//        val pn = e.getParameterNames
+        if (!e.getParameters().isEmpty) {
           display.append("(" + e.getParameterTypes().mkString(", ") + ")")
         }
         display
