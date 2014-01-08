@@ -21,33 +21,29 @@ import scala.tools.eclipse.debug.ScalaDebugPlugin
 
 class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
 
-  def evaluateExpression(expression: String, context: IDebugElement, listener: IWatchExpressionListener) = {
+  def evaluateExpression(expression: String, context: IDebugElement, listener: IWatchExpressionListener) = listener.watchEvaluationFinished(
     try {
       val debugTarget = context.getDebugTarget.asInstanceOf[ScalaDebugTarget]
       val result = doEvaluate(expression, debugTarget)
 
-      listener.watchEvaluationFinished(
-        new IWatchExpressionResult {
-          val getValue = wrapValue(result, debugTarget)
-          val hasErrors = false
-          val getErrorMessages = Array[String]()
-          val getExpressionText = expression
-          val getException = null
-        })
+      new IWatchExpressionResult {
+        val getValue = wrapValue(result, debugTarget)
+        val hasErrors = false
+        val getErrorMessages = Array[String]()
+        val getExpressionText = expression
+        val getException = null
+      }
     } catch {
       case e: Throwable =>
-        val x = e
-        val y = x
-
         new IWatchExpressionResult {
           val getValue = null
           val hasErrors = true
-          val getErrorMessages = Array[String]("Unsupported expression")
+          val getErrorMessages = Array[String](s"${e.toString}: ${e.getMessage}")
           val getExpressionText = expression
           val getException = new DebugException(new Status(IStatus.ERROR, ScalaDebugPlugin.id, e.getMessage, e))
         }
     }
-  }
+  )
 
   protected def wrapValue(value: Any, debugTarget: ScalaDebugTarget) = ScalaValue(value match {
     case b: Boolean => b
