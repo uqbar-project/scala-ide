@@ -24,7 +24,6 @@ import com.sun.jdi.event.VMDisconnectEvent
 import com.sun.jdi.event.VMStartEvent
 import com.sun.jdi.request.ThreadDeathRequest
 import com.sun.jdi.request.ThreadStartRequest
-import com.sun.tools.jdi.ClassObjectReferenceImpl
 import java.io.FileOutputStream
 import java.io.DataOutputStream
 import java.io.FileWriter

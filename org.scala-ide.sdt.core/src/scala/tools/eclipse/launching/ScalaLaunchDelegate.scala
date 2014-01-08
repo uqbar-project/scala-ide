@@ -85,7 +85,7 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       val missingScalaLibraries = toInclude(modifiedAttrMap, classpath0.toList, configuration)
       // Classpath
       // Add scala libraries that were missed in VM attributes
-      val classpath = (classpath0.toList):::missingScalaLibraries ::: (scalaCompilerLibrary getOrElse List()) :::List("/home/nicolas/Desarrollo/Programas/Scala/scala-ide/org.scala-ide.sdt.debug/target/org.scala-ide.sdt.debug-4.0.0-SNAPSHOT.jar")
+      val classpath = (classpath0.toList):::missingScalaLibraries ::: (scalaCompilerLibrary getOrElse List()) :::List("/home/demian/workspace-scala-ide/scala-ide/org.scala-ide.sdt.debug/target/org.scala-ide.sdt.debug-4.0.0-SNAPSHOT.jar")
 
 
 

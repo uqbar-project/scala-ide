@@ -18,9 +18,6 @@ import com.sun.jdi.ClassType
 import scala.tools.eclipse.debug.model.ScalaStringReference
 import com.sun.jdi.BooleanValue
 import com.sun.jdi.ObjectReference
-import scala.tools.eclipse.debug.model.ScalaObjectReference
-import scala.tools.eclipse.debug.model.ScalaPrimitiveValue
-import scala.tools.eclipse.debug.model.ScalaObjectReference
 import scala.tools.eclipse.debug.model.ScalaPrimitiveValue
 import org.eclipse.debug.core.model.IValue
 import scala.tools.eclipse.debug.model.ScalaVariable
