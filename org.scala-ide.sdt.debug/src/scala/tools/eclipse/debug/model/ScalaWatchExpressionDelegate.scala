@@ -92,8 +92,6 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
       evaluationEngine.bind(v.getName, v.getValue, true)(Option(v.getReferenceTypeName))
     }
 
-    evaluationEngine.bind("blah", wrapValue(42, debugTarget), true)(Option("Integer"))
-
     val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame), getScalaLaunchDelegate(frame.thread).scalaProject)
 
     for (b <- bindings)
