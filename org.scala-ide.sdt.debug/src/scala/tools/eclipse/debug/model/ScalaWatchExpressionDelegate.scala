@@ -18,6 +18,8 @@ import org.eclipse.debug.core.DebugException
 import org.eclipse.core.runtime.Status
 import org.eclipse.core.runtime.IStatus
 import scala.tools.eclipse.debug.ScalaDebugPlugin
+import org.eclipse.debug.core.model.IValue
+import org.eclipse.debug.core.model.IVariable
 
 class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
 
@@ -27,7 +29,7 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
       val result = doEvaluate(expression, debugTarget)
 
       new IWatchExpressionResult {
-        val getValue = wrapValue(result, debugTarget)
+        val getValue = result
         val hasErrors = false
         val getErrorMessages = Array[String]()
         val getExpressionText = expression
@@ -42,8 +44,7 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
           val getExpressionText = expression
           val getException = new DebugException(new Status(IStatus.ERROR, ScalaDebugPlugin.id, e.getMessage, e))
         }
-    }
-  )
+    })
 
   protected def wrapValue(value: Any, debugTarget: ScalaDebugTarget) = ScalaValue(value match {
     case b: Boolean => b
@@ -57,7 +58,7 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
     case other => other.toString
   }, debugTarget)
 
-  protected def doEvaluate(expression: String, debugTarget: ScalaDebugTarget): Any = {
+  protected def doEvaluate(expression: String, debugTarget: ScalaDebugTarget) = {
     def bindStackFrame(evalEngine: ScalaEvaluationEngine, stackFrame: ScalaStackFrame, scalaProject: ScalaProject): Unit = {
       val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(stackFrame), scalaProject)
 
@@ -90,6 +91,8 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
     vs.foreach { v =>
       evaluationEngine.bind(v.getName, v.getValue, true)(Option(v.getReferenceTypeName))
     }
+
+    evaluationEngine.bind("blah", wrapValue(42, debugTarget), true)(Option("Integer"))
 
     val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame), getScalaLaunchDelegate(frame.thread).scalaProject)
 

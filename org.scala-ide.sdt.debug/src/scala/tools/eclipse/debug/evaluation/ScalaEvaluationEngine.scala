@@ -1,39 +1,32 @@
 package scala.tools.eclipse.debug.evaluation
 
-import org.eclipse.jdt.debug.eval.IEvaluationEngine
-import org.eclipse.jdt.debug.core.IJavaStackFrame
-import org.eclipse.jdt.debug.eval.IEvaluationListener
-import org.eclipse.jdt.debug.core.IJavaObject
-import org.eclipse.jdt.debug.core.IJavaThread
-import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jdt.debug.core.IJavaDebugTarget
-import scala.tools.eclipse.debug.model.ScalaStackFrame
-import scala.tools.eclipse.debug.model.ScalaDebugTarget
-import scala.tools.eclipse.debug.model.ScalaThread
-import scala.tools.eclipse.debug.model.ScalaObjectReference
+import scala.collection.JavaConverters._
+import scala.tools.eclipse.ScalaProject
+import scala.tools.eclipse.debug.model._
 import scala.tools.eclipse.debug.model.ScalaClassType
-import com.sun.jdi.Value
-import scala.tools.eclipse.debug.model.ScalaValue
-import com.sun.jdi.ClassType
-import scala.tools.eclipse.debug.model.ScalaStringReference
-import com.sun.jdi.BooleanValue
-import com.sun.jdi.ObjectReference
+import scala.tools.eclipse.debug.model.ScalaDebugTarget
+import scala.tools.eclipse.debug.model.ScalaObjectReference
 import scala.tools.eclipse.debug.model.ScalaPrimitiveValue
+import scala.tools.eclipse.debug.model.ScalaStackFrame
+import scala.tools.eclipse.debug.model.ScalaStringReference
+import scala.tools.eclipse.debug.model.ScalaThread
+import scala.tools.eclipse.debug.model.ScalaValue
+import scala.tools.eclipse.javaelements.ScalaCompilationUnit
+import scala.tools.eclipse.javaelements.ScalaSourceFile
+
 import org.eclipse.debug.core.model.IValue
-import scala.tools.eclipse.debug.model.ScalaVariable
+
+import com.sun.jdi.BooleanValue
 import com.sun.jdi.ByteValue
-import com.sun.jdi.DoubleValue
 import com.sun.jdi.CharValue
+import com.sun.jdi.ClassType
+import com.sun.jdi.DoubleValue
 import com.sun.jdi.FloatValue
 import com.sun.jdi.IntegerValue
+import com.sun.jdi.Location
 import com.sun.jdi.LongValue
 import com.sun.jdi.ShortValue
-import com.sun.jdi.event.LocatableEvent
-import scala.tools.eclipse.ScalaProject
-import scala.tools.eclipse.javaelements.ScalaSourceFile
-import scala.tools.eclipse.javaelements.ScalaCompilationUnit
-import scala.collection.JavaConverters._
-import com.sun.jdi.Location
+import com.sun.jdi.Value
 
 
 class ValueBinding(_name: String, val value: ScalaValue)(_tpe: => Option[String]) {
@@ -179,16 +172,13 @@ class ScalaEvaluationEngine(classpath: Seq[String], val target: ScalaDebugTarget
   def isStale = thread.isTerminated
 
   /* Execute the expression and returns what the REPL would print */
-  def execute(expression: String, beQuiet: Boolean, bindings: Seq[ValueBinding]): Option[String] = {
+  def execute(expression: String, beQuiet: Boolean, bindings: Seq[ValueBinding]) = {
     doInterpret(expression, beQuiet, bindings) match {
       case Some("Success") =>
         val lastRequest = repl.lastRequest[SObjRef]()
         val lineRep = lastRequest.lineRep[SObjRef]()
-        val printVar = lineRep.printName[SStrRef]()
-        val nil = target.objectByName("scala.collection.immutable.Nil", true, thread)
-        val callOpt = lineRep.callOpt[SObjRef](printVar, nil)
-        val printValue = callOpt.getOrElse[SStrRef](ScalaValue(null, target))
-        Some(printValue.underlying.value())
+        val resultValue = lastRequest.getEval[ScalaObjectReference]().get[ScalaObjectReference]()
+        Some(resultValue)
       case _ => None
     }
   }
