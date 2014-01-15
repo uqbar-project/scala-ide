@@ -37,6 +37,8 @@ import org.eclipse.jface.dialogs.MessageDialogWithToggle
 import org.eclipse.jface.dialogs.IDialogConstants
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
 import scala.tools.eclipse.ScalaProject
+import java.io.File
+import org.eclipse.core.runtime.FileLocator
 
 class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
@@ -80,14 +82,16 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       // TODO: do we still need this?
       val modifiedAttrMap: mutable.Map[String, Array[String]] =
         if (vmAttributesMap == null) mutable.Map()
-        else vmAttributesMap.asInstanceOf[java.util.Map[String,Array[String]]].asScala
+        else vmAttributesMap.asInstanceOf[java.util.Map[String, Array[String]]].asScala
       val classpath0 = getClasspath(configuration)
       val missingScalaLibraries = toInclude(modifiedAttrMap, classpath0.toList, configuration)
       // Classpath
       // Add scala libraries that were missed in VM attributes
-      val classpath = (classpath0.toList):::missingScalaLibraries ::: (scalaCompilerLibrary getOrElse List()) :::List("/home/demian/workspace-scala-ide/scala-ide/org.scala-ide.sdt.debug/target/org.scala-ide.sdt.debug-4.0.0-SNAPSHOT.jar")
 
+      val resourcesRoot = this.getClass.getResource("/")
+      val replAssistanceJarPath = FileLocator.toFileURL(resourcesRoot).getFile + "replassistance.jar"
 
+      val classpath = (classpath0.toList) ::: missingScalaLibraries ::: (scalaCompilerLibrary getOrElse List()) ::: List(replAssistanceJarPath)
 
       // Create VM config
       val runConfig = new VMRunnerConfiguration(mainTypeName, classpath.toArray)
@@ -96,7 +100,6 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       runConfig.setVMArguments(execArgs.getVMArgumentsArray())
       runConfig.setWorkingDirectory(workingDirName)
       runConfig.setVMSpecificAttributesMap(vmAttributesMap)
-
 
       // Bootpath
       runConfig.setBootClassPath(getBootpath(configuration))
@@ -111,7 +114,7 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       // done the verification phase
       monitor.worked(1)
 
-        // check for cancellation
+      // check for cancellation
       if (monitor.isCanceled()) return
       monitor.subTask(LaunchingMessages.JavaLocalApplicationLaunchConfigurationDelegate_Creating_source_locator____2)
       // set the default source locator if required
@@ -124,8 +127,7 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       // check for cancellation
       if (monitor.isCanceled())
         return
-    }
-    finally {
+    } finally {
       monitor.done()
     }
   }
@@ -146,7 +148,7 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       this.scalaProject = scalaProject
       val mainClassVerifier = new MainClassVerifier
       val status = mainClassVerifier.execute(scalaProject, mainTypeName, existsProblems(project.getProject))
-      if(!status.isOK) {
+      if (!status.isOK) {
         val reporter = new UIErrorReporter
         reporter.report(status)
       } else status.isOK
@@ -154,10 +156,10 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
   }
 
   private def toInclude(vmMap: mutable.Map[String, Array[String]], classpath: List[String],
-                configuration: ILaunchConfiguration): List[String] =
+    configuration: ILaunchConfiguration): List[String] =
     missingScalaLibraries((vmMap.values.flatten.toList) ::: classpath, configuration)
 
-  private def missingScalaLibraries(included: List[String], configuration: ILaunchConfiguration): List[String] =  {
+  private def missingScalaLibraries(included: List[String], configuration: ILaunchConfiguration): List[String] = {
     val entries = JavaRuntime.computeUnresolvedRuntimeClasspath(configuration).toList
     val libid = Path.fromPortableString(ScalaPlugin.plugin.scalaLibId)
     val found = entries.find(e => e.getClasspathEntry != null && e.getClasspathEntry.getPath == libid)
@@ -182,23 +184,22 @@ class ScalaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
 
       @volatile var continueLaunch = true
       DisplayThread.asyncExec {
-         try {
-            val dialog = new MessageDialog(
-                ScalaPlugin.getShell,
-                "Detected problem",
-                null,
-                status.getMessage + " Continue launch?",
-                MessageDialog.WARNING,
-                Array(IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL),
-                1)
-            dialog.open()
-            val returnValue = dialog.getReturnCode()
-            if (returnValue == IDialogConstants.OK_ID) continueLaunch = true
-            else continueLaunch = false
-          }
-          finally {
-            latch.countDown()
-          }
+        try {
+          val dialog = new MessageDialog(
+            ScalaPlugin.getShell,
+            "Detected problem",
+            null,
+            status.getMessage + " Continue launch?",
+            MessageDialog.WARNING,
+            Array(IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL),
+            1)
+          dialog.open()
+          val returnValue = dialog.getReturnCode()
+          if (returnValue == IDialogConstants.OK_ID) continueLaunch = true
+          else continueLaunch = false
+        } finally {
+          latch.countDown()
+        }
       }
 
       latch.await()
