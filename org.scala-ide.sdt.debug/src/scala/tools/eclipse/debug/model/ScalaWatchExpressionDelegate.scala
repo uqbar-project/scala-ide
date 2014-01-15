@@ -79,24 +79,19 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
 
       evalEngine.resetRepl()
 
-      bindStackFrame(evalEngine, stackFrame, ScalaPlugin.plugin.asScalaProject(sld.getJavaProject(config).getProject).get)
-
       evalEngine
     }
 
     val thread = ScalaDebugger.currentThread
     val frame = thread.getTopStackFrame.asInstanceOf[ScalaStackFrame]
-    val vs = frame.getVariables()
     val evaluationEngine = makeEvalEngine(frame)
-    vs.foreach { v =>
-      evaluationEngine.bind(v.getName, v.getValue, true)(Option(v.getReferenceTypeName))
-    }
 
-    val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame), getScalaLaunchDelegate(frame.thread).scalaProject)
+    val sld = getScalaLaunchDelegate(frame.thread)
+    val config = debugTarget.getLaunch.getLaunchConfiguration
 
-    for (b <- bindings)
-      evaluationEngine.bind(b.name, b.value, true)(b.tpe)
+    val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame), 
+        ScalaPlugin.plugin.asScalaProject(sld.getJavaProject(config).getProject).get)
 
-    evaluationEngine.evaluate(expression, true, Nil).get
+    evaluationEngine.evaluate(expression, true, bindings).get
   }
 }

@@ -1,5 +1,6 @@
 package scala.tools.eclipse.debug.evaluation
 
+
 import scala.collection.JavaConverters._
 import scala.tools.eclipse.ScalaProject
 import scala.tools.eclipse.debug.model._
