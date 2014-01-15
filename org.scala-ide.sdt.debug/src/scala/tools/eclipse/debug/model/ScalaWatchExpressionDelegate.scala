@@ -99,6 +99,6 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
     for (b <- bindings)
       evaluationEngine.bind(b.name, b.value, true)(b.tpe)
 
-    evaluationEngine.execute(expression, true, Nil).get
+    evaluationEngine.evaluate(expression, true, Nil).get
   }
 }

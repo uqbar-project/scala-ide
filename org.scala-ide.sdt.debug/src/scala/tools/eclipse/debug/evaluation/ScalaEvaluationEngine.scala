@@ -28,7 +28,6 @@ import com.sun.jdi.LongValue
 import com.sun.jdi.ShortValue
 import com.sun.jdi.Value
 
-
 class ValueBinding(_name: String, val value: ScalaValue)(_tpe: => Option[String]) {
   val name =
     if (_name == "this") "this$" else _name
@@ -110,7 +109,7 @@ object ScalaEvaluationEngine {
     new ScalaObjectReference(classObject.classType.newInstance(thread.threadRef, constructor, List[Value]().asJava, ClassType.INVOKE_SINGLE_THREADED), target)
   }
 
-   def createAnyList(target: ScalaDebugTarget, thread: ScalaThread, values: Seq[ScalaValue]) = {
+  def createAnyList(target: ScalaDebugTarget, thread: ScalaThread, values: Seq[ScalaValue]) = {
     val lb = createObject(target, thread, "scala.collection.mutable.ListBuffer")
     for (v <- values)
       lb.invokeMethod("$plus$eq", "(Ljava/lang/Object;)Lscala/collection/mutable/ListBuffer;", thread, v)
@@ -177,8 +176,11 @@ class ScalaEvaluationEngine(classpath: Seq[String], val target: ScalaDebugTarget
       case Some("Success") =>
         val lastRequest = repl.lastRequest[SObjRef]()
         val lineRep = lastRequest.lineRep[SObjRef]()
-        val resultValue = lastRequest.getEval[ScalaObjectReference]().get[ScalaObjectReference]()
-        Some(resultValue)
+        val printVar = lineRep.printName[SStrRef]()
+        val nil = target.objectByName("scala.collection.immutable.Nil", true, thread)
+        val callOpt = lineRep.callOpt[SObjRef](printVar, nil)
+        val printValue = callOpt.getOrElse[SStrRef](ScalaValue(null, target))
+        Some(printValue.underlying.value())
       case _ => None
     }
   }
@@ -189,10 +191,8 @@ class ScalaEvaluationEngine(classpath: Seq[String], val target: ScalaDebugTarget
       case Some("Success") => {
         val lastRequest = repl.lastRequest[SObjRef]()
         val lineRep = lastRequest.lineRep[SObjRef]()
-        val nil = target.objectByName("scala.collection.immutable.Nil", true, thread)
-        val callOpt = lineRep.callOpt[SObjRef](ScalaValue("$result", target))
-        val call = callOpt.getOrElse[SObjRef](ScalaValue(null, target))
-        Some(call)
+        val resultValue = lastRequest.getEval[ScalaObjectReference]().get[ScalaObjectReference]()
+        Some(resultValue)
       }
       case _ => None
     }
@@ -223,7 +223,7 @@ class ScalaEvaluationEngine(classpath: Seq[String], val target: ScalaDebugTarget
           val jdiTypename = assistance.getClassName[SStrRef](bindValue).underlying.value()
           if (isGenericType(jdiTypename))
             binding.tpe getOrElse jdiTypename
-            else jdiTypename
+          else jdiTypename
         }
         bind(binding.name, typename, binding.value, beQuiet)
         true
