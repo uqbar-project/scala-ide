@@ -29,7 +29,13 @@ object IDESettings {
   }
 
   def buildManagerSettings: List[Box] =
-    List(Box("Build manager", List(buildManager, compileOrder, stopBuildOnErrors, debugIncremental, withVersionClasspathValidator)))
+    List(Box("Build manager",
+      List(buildManager,
+        compileOrder,
+        stopBuildOnErrors,
+        relationsDebug,
+        apiDiff,
+        withVersionClasspathValidator)))
 }
 
 object ScalaPluginSettings extends Settings {
@@ -37,6 +43,7 @@ object ScalaPluginSettings extends Settings {
   val compileOrder = ChoiceSetting("-compileorder", "which", "Compilation order",
       List("Mixed", "JavaThenScala", "ScalaThenJava"), "Mixed")
   val stopBuildOnErrors = BooleanSetting("-stopBuildOnError", "Stop build if dependent projects have errors.")
-  val debugIncremental = BooleanSetting("-debugIncremental", "Explain incremental compilation (sbt builder only)")
+  val relationsDebug = BooleanSetting("-relationsDebug", "Log very detailed information about relations, such as dependencies between source files.")
   val withVersionClasspathValidator = BooleanSetting("-withVersionClasspathValidator", "Check Scala compatibility of jars in classpath")
+  val apiDiff = BooleanSetting("-apiDiff", "Log type diffs that trigger additional compilation (slows down builder)")
 }

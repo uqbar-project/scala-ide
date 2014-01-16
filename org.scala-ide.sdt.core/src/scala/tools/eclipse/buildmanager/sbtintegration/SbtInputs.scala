@@ -41,7 +41,13 @@ class SbtInputs(sourceFiles: Seq[File], project: ScalaProject, javaMonitor: SubM
         }
     def progress = Maybe.just(scalaProgress)
     def reporter = scalaReporter
-    override def incrementalCompilerOptions = IncOptions.toStringMap(IncOptions.Default)
+    override def incrementalCompilerOptions: java.util.Map[String, String] = {
+      val incOptions = sbt.inc.IncOptions.Default.copy(
+          apiDebug = project.storage.getBoolean(SettingConverterUtil.convertNameToProperty(properties.ScalaPluginSettings.apiDiff.name)),
+          relationsDebug = project.storage.getBoolean(SettingConverterUtil.convertNameToProperty(properties.ScalaPluginSettings.relationsDebug.name)),
+          apiDumpDirectory = None)
+      sbt.inc.IncOptions.toStringMap(incOptions)
+    }
   }
 
   def options = new Options {
