@@ -89,7 +89,7 @@ class ScalaWatchExpressionDelegate extends IWatchExpressionDelegate {
     val sld = getScalaLaunchDelegate(frame.thread)
     val config = debugTarget.getLaunch.getLaunchConfiguration
 
-    val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame), 
+    val bindings = ScalaEvaluationEngine.yieldStackFrameBindings(Option(frame),
         ScalaPlugin.plugin.asScalaProject(sld.getJavaProject(config).getProject).get)
 
     evaluationEngine.evaluate(expression, true, bindings).get
