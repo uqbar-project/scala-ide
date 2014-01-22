@@ -1,6 +1,5 @@
 package scala.tools.eclipse.debug.evaluation
 
-
 import scala.collection.JavaConverters._
 import scala.tools.eclipse.ScalaProject
 import scala.tools.eclipse.debug.model._
@@ -14,9 +13,7 @@ import scala.tools.eclipse.debug.model.ScalaThread
 import scala.tools.eclipse.debug.model.ScalaValue
 import scala.tools.eclipse.javaelements.ScalaCompilationUnit
 import scala.tools.eclipse.javaelements.ScalaSourceFile
-
 import org.eclipse.debug.core.model.IValue
-
 import com.sun.jdi.BooleanValue
 import com.sun.jdi.ByteValue
 import com.sun.jdi.CharValue
@@ -28,6 +25,8 @@ import com.sun.jdi.Location
 import com.sun.jdi.LongValue
 import com.sun.jdi.ShortValue
 import com.sun.jdi.Value
+import scala.annotation.tailrec
+import scala.collection.mutable.HashMap
 
 class ValueBinding(_name: String, val value: ScalaValue)(_tpe: => Option[String]) {
   val name =
@@ -163,10 +162,24 @@ class ScalaEvaluationEngine(classpath: Seq[String], val target: ScalaDebugTarget
 
   private val assistance = target.objectByName("scala.tools.eclipse.debug.debugged.ReplAssistance", true, thread)
 
+  @tailrec
+  private def createRepl(replAssistance: scala.tools.eclipse.debug.model.ScalaObjectReference, cp: scala.tools.eclipse.debug.model.ScalaObjectReference): scala.tools.eclipse.debug.model.ScalaObjectReference = {
+    try {
+      replAssistance.createRepl[SObjRef](cp)
+    } catch {
+      // This exception is thrown when the thread is apparently not ready and 
+      // ReplAssistance.createRepl returns a ScalaNullValue object which cannot be 
+      // cast ScalaObjectReference
+      case e: ClassCastException =>
+        val ex = e
+        createRepl(replAssistance, cp)
+    }
+  }
+
   private val repl = {
     val replAssistance = target.objectByName("scala.tools.eclipse.debug.debugged.ReplAssistance", true, thread)
     val cp = createStringList(classpath)
-    replAssistance.createRepl[SObjRef](cp)
+    createRepl(replAssistance, cp)
   }
 
   def isStale = thread.isTerminated
